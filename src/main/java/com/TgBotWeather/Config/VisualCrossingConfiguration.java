@@ -8,9 +8,10 @@ import org.springframework.context.annotation.PropertySource;
 @Data
 @Configuration
 @PropertySource("application.properties")
-public class BotsConfiguration {
-    @Value("${BotName}")
-    private String BotName;
-    @Value("${BotToken}")
-    private String BotToken;
+public class VisualCrossingConfiguration {
+
+    @Value("${VC_http}")
+    private String httpmain;
+    @Value("${VC_Token}")
+    private String VisualCrossingKey;
 }
