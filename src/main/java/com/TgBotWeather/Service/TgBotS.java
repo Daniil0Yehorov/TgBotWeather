@@ -48,7 +48,8 @@ public class TgBotS extends TelegramLongPollingBot {
             switch (text){
                 case "/info":
                     sendMessage(chatId, "This bot gives u information about weather in your country." +
-                            "Comands: /weather <Countryname> <Startdate in format YYYY-MM-DD> <EndDate>");
+                            "Comands: /weather <Countryname> <Startdate in format YYYY-MM-DD> <EndDate>" +
+                            " (Temperature units:Celsius=C;Fahrenheit=F;Kelvin=K)<K or F or C>");
                     break;
                 case "/start":
                     startCommand(chatId, update.getMessage().getChat().getFirstName());
@@ -57,11 +58,12 @@ public class TgBotS extends TelegramLongPollingBot {
                 default:
                     if (text.startsWith("/weather")) {
                         String[] parts = text.split(" ");
-                        if (parts.length == 4) {
+                        if (parts.length == 5) {
                             String country = parts[1];
                             String startDate = parts[2];
                             String endDate = parts[3];
-                            sendWeather(chatId, country, startDate, endDate);
+                            String Tunit=parts[4];
+                            sendWeather(chatId, country, startDate, endDate,Tunit);
                         } else {
                             sendMessage(chatId, "Please provide the country and date range in the format: /weather <country> <startDate::YYYY-MM-DD> <endDate:YYYY-MM-DD>");
                         }
@@ -77,9 +79,28 @@ public class TgBotS extends TelegramLongPollingBot {
                 " information about weather in ur country. Write comand /info";
         sendMessage(chatId, answer);
     }
-    private void sendWeather(String chatId, String country, String startDate, String endDate) {
-        String weatherInfo = getWeather(country, startDate, endDate);
+
+    private void sendWeather(String chatId, String country, String startDate, String endDate,String Tunit) {
+        String weatherInfo = getWeather(country, startDate, endDate,Tunit);
         sendMessage(chatId, weatherInfo);
+    }
+
+    private double[] convertTemperatures(double tempMax, double tempMin, String Tunit) {
+        switch (Tunit) {
+            case "C":
+                tempMax = (tempMax - 32) * 5 / 9;
+                tempMin = (tempMin - 32) * 5 / 9;
+                break;
+            case "K":
+                tempMax = (tempMax - 32) * 5 / 9 + 273.15;
+                tempMin = (tempMin - 32) * 5 / 9 + 273.15;
+                break;
+            case "F":
+                break; // No conversion
+            default:
+                return null;
+        }
+        return new double[]{tempMax, tempMin};
     }
 
     private void sendMessage(String chatid,String text){
@@ -93,7 +114,7 @@ public class TgBotS extends TelegramLongPollingBot {
         }
     }
 
-    private String getWeather(String country, String startDate, String endDate) {
+    private String getWeather(String country, String startDate, String endDate,String Tunit) {
         String url = visualCrossingConfiguration.getHttpmain() + country + "/" + startDate + "/" + endDate
                 + "?key=" + visualCrossingConfiguration.getVisualCrossingKey();
         HttpGet request = new HttpGet(url);
@@ -116,9 +137,13 @@ public class TgBotS extends TelegramLongPollingBot {
                     double tempMax = day.getDouble("tempmax");
                     double tempMin = day.getDouble("tempmin");
                     String conditions = day.getString("conditions");
-                    //Temperature in fahrenheit
-                    weatherInfo.append(String.format("Date: %s\nMax Temp: %.1f°C\nMin Temp: %.1f°C\nConditions: %s\n\n",
-                            date, tempMax, tempMin, conditions));
+                    double[] convertedTemps = convertTemperatures(tempMax, tempMin, Tunit);
+
+                    if (convertedTemps == null) {
+                        return "Invalid temperature unit. Please use C for Celsius, F for Fahrenheit, or K for Kelvin.";
+                    }
+                    weatherInfo.append(String.format("Date: %s\nMax Temp: %.1f%s\nMin Temp: %.1f%s\nConditions: %s\n\n",
+                            date, convertedTemps[0], Tunit, convertedTemps[1], Tunit, conditions));
                 }
 
                 return weatherInfo.toString();
@@ -128,7 +153,6 @@ public class TgBotS extends TelegramLongPollingBot {
         }
         return "Failed to retrieve weather data";
     }
-
 
     @Override
     public String getBotUsername() {
