@@ -8,7 +8,7 @@ WORKDIR /app
 COPY pom.xml /app/
 COPY src /app/src
 
-# Скачиваем зависимости и собираем проект
+# Собираем проект с помощью Maven
 RUN apt-get update && \
     apt-get install -y maven && \
     mvn -f /app/pom.xml clean package
