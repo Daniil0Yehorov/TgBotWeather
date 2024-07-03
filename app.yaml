@@ -1,13 +1,10 @@
 runtime: java21
 env: standard
-# remember to use an instance class compatible with your scaling type
-instance_class: B1
-  #or F128 hours per day of F1 instances
-  #9 hours per day of B1 instances
-handlers:
-  - url: .*
-    script: auto
+
+instance_class: B1  # B1 or F1
+
 basic_scaling:
   max_instances: 3
   idle_timeout: 10m
-service_account: Yourappspot.gserviceaccount.com
+
+service_account: YourAppappspot.gserviceaccount.com
